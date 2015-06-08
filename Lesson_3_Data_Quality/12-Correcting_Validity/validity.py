@@ -18,6 +18,8 @@ You can write helper functions for checking the data and writing the files, but 
 """
 import csv
 import pprint
+from pandas import *
+import datetime as dt
 
 INPUT_FILE = 'autos.csv'
 OUTPUT_GOOD = 'autos-valid.csv'
@@ -25,27 +27,24 @@ OUTPUT_BAD = 'FIXME-autos.csv'
 
 def process_file(input_file, output_good, output_bad):
 
-    with open(input_file, "r") as f:
-        reader = csv.DictReader(f)
-        header = reader.fieldnames
+    df = read_csv(input_file)
+    # Remove Nulls
+    bad_df = df[df['productionStartYear'].isnull()]
+    df = df[df['productionStartYear'].notnull()]
+    # Remove the line with word 'Year'
+    bad_df = bad_df.append(df[df['productionStartYear'].str.contains('Year')])
+    df = df[~df['productionStartYear'].str.contains('Year')]
+    df['productionStartYear'] = df['productionStartYear'].apply(lambda x: dt.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S+%U:%W').year)
+    bad_df = bad_df.append(df[(df['productionStartYear'] < 1886) | (df['productionStartYear'] > 2014)])
+    df = df[(df['productionStartYear'] >= 1886) & (df['productionStartYear'] <= 2014)]
+    df = df[df['URI'].str.contains('dbpedia.org')]
+    bad_df = bad_df[bad_df['URI'].str.contains('dbpedia.org')]
 
-        #COMPLETE THIS FUNCTION
-
-
-
-    # This is just an example on how you can use csv.DictWriter
-    # Remember that you have to output 2 files
-    with open(output_good, "w") as g:
-        writer = csv.DictWriter(g, delimiter=",", fieldnames= header)
-        writer.writeheader()
-        for row in YOURDATA:
-            writer.writerow(row)
-
+    bad_df.to_csv(output_bad)
+    df.to_csv(output_good)
 
 def test():
-
     process_file(INPUT_FILE, OUTPUT_GOOD, OUTPUT_BAD)
-
 
 if __name__ == "__main__":
     test()

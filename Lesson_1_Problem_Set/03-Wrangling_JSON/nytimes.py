@@ -38,8 +38,14 @@ def article_overview(kind, period):
     data = get_from_file(kind, period)
     titles = []
     urls =[]
-    # YOUR CODE HERE
-
+    for i in range(0,len(data)):
+        articles_dict = {}
+        articles_dict[data[i][u'section']] = data[i][u'title']
+        titles.append(articles_dict)
+        for j in range(0,len(data[i][u'media'])):
+            for k in range(0,len(data[i][u'media'][j][u'media-metadata'])):
+                if data[i][u'media'][j][u'media-metadata'][k][u'format'] == 'Standard Thumbnail':
+                    urls.append(data[i][u'media'][j][u'media-metadata'][k][u'url'])
     return (titles, urls)
 
 

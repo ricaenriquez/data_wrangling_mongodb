@@ -17,9 +17,10 @@ def extract_carriers(page):
     data = []
 
     with open(page, "r") as html:
-        # do something here to find the necessary values
         soup = BeautifulSoup(html)
-
+        for airline in soup.find(id='CarrierList'):
+            if ('U.S.' not in airline.string) & ('Foreign' not in airline.string) & (airline.string.strip() !=''):
+                data.append(airline[u'value'])
     return data
 
 

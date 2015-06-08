@@ -20,10 +20,12 @@ CITIES = 'cities.csv'
 
 
 def fix_name(name):
-
-    # YOUR CODE HERE
-
-    return name
+    if (name == 'NONE') or (name == 'NULL'):
+        return []
+    if name.startswith('{'):
+        entries = (name.strip('{}')).split('|')
+        return entries
+    return [name]
 
 
 def process_file(filename):
@@ -45,9 +47,9 @@ def process_file(filename):
 def test():
     data = process_file(CITIES)
 
-    print "Printing 20 results:"
-    for n in range(20):
-        pprint.pprint(data[n]["name"])
+    # print "Printing 20 results:"
+    # for n in range(20):
+    #     pprint.pprint(data[n]["name"])
 
     assert data[14]["name"] == ['Negtemiut', 'Nightmute']
     assert data[3]["name"] == ['Kumhari']

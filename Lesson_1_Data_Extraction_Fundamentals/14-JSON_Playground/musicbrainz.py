@@ -38,22 +38,38 @@ def pretty_print(data, indent=4):
 
 
 def main():
-    results = query_by_name(ARTIST_URL, query_type["simple"], "Nirvana")
-    pretty_print(results)
-
-    artist_id = results["artists"][1]["id"]
-    print "\nARTIST:"
-    pretty_print(results["artists"][1])
-
-    artist_data = query_site(ARTIST_URL, query_type["releases"], artist_id)
-    releases = artist_data["releases"]
-    print "\nONE RELEASE:"
-    pretty_print(releases[0], indent=2)
-    release_titles = [r["title"] for r in releases]
-
-    print "\nALL TITLES:"
-    for t in release_titles:
-        print t
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "Nirvana")
+    # pretty_print(results)
+    #
+    # artist_id = results["artists"][1]["id"]
+    # print "\nARTIST:"
+    # pretty_print(results["artists"][1])
+    #
+    # artist_data = query_site(ARTIST_URL, query_type["releases"], artist_id)
+    # releases = artist_data["releases"]
+    # print "\nONE RELEASE:"
+    # pretty_print(releases[0], indent=2)
+    # release_titles = [r["title"] for r in releases]
+    #
+    # print "\nALL TITLES:"
+    # for t in release_titles:
+    #     print t
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "First Aid Kit")
+    # first_aid_count = 0
+    # for i in range(0, len(results["artists"])):
+    #     if results["artists"][i]["name"] == "First Aid Kit":
+    #         # print results["artists"][i]["name"], results["artists"][i]["id"]
+    #         first_aid_count += 1
+    # print 'There are ', first_aid_count, 'First Aid Kit bands.'
+    #
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "Queen")
+    # print "The begin_area name for", results["artists"][0]["name"], "is", results["artists"][0]["begin-area"]["name"]
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "The Beatles")
+    # print "The Spanish Alias for Beatles is", results["artists"][0]["aliases"][5]['name']
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "Nirvana")
+    # print "Nirvana's disambiguation is", results["artists"][0]["disambiguation"]
+    # results = query_by_name(ARTIST_URL, query_type["simple"], "One Direction")
+    # print "One Direction began in", results["artists"][0]['life-span']['begin']
 
 
 if __name__ == '__main__':

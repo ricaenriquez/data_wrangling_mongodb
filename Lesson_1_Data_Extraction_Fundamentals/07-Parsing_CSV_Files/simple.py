@@ -15,11 +15,22 @@ DATAFILE = "beatles-diskography.csv"
 
 def parse_file(datafile):
     data = []
+    count = 0
     with open(datafile, "rb") as f:
         for line in f:
-            print line
-
-    return data
+            if count == 0:
+                header_line = line.split(',')
+                for i in range(0,len(header_line)):
+                    header_line[i] = header_line[i].strip('\r\n')
+            else:
+                definition = {}
+                entry = line.split(',')
+                for i in range(0,len(entry)):
+                    definition[header_line[i]] = entry[i].strip('\r\n')
+                data.append(definition)
+            count += 1
+            if count >= 11:
+                return data
 
 
 def test():

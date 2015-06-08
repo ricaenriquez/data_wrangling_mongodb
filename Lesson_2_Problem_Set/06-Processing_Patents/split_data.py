@@ -21,8 +21,27 @@ def split_file(filename):
     # The new files should be saved with filename in the following format:
     # "{}-{}".format(filename, n) where n is a counter, starting from 0.
 
-    pass
-
+    f = open(filename, "r")
+    data = []
+    start = 0
+    filenum = 0
+    for row in f.readlines():
+        if row.startswith("<?xml") & (start > 0):
+            fname = "{}-{}".format(PATENTS, filenum)
+            fsplit = open(fname, "w")
+            for item in data:
+                fsplit.write("%s\n" % item)
+            fsplit.close()
+            data = []
+            filenum += 1
+        data.append(row)
+        start += 1
+    fname = "{}-{}".format(PATENTS, filenum)
+    fsplit = open(fname, "w")
+    for item in data:
+        fsplit.write("%s\n" % item)
+    fsplit.close()
+    f.close()
 
 def test():
     split_file(PATENTS)

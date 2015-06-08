@@ -7,7 +7,7 @@ import xlrd
 import os
 import csv
 from zipfile import ZipFile
-datafile = "2013_ERCOT_Hourly_Load_Data.xls"
+datafile = "../../2013_ERCOT_Hourly_Load_Data.xls"
 outfile = "2013_Max_Loads.csv"
 
 
@@ -19,18 +19,23 @@ def open_zip(datafile):
 def parse_file(datafile):
     workbook = xlrd.open_workbook(datafile)
     sheet = workbook.sheet_by_index(0)
-    data = None
-    # YOUR CODE HERE
     # Remember that you can use xlrd.xldate_as_tuple(sometime, 0) to convert
     # Excel date to Python tuple of (year, month, day, hour, minute, second)
+    data = [['Station', 'Year', 'Month', 'Day', 'Hour', 'Max Load']]
+    for i in range(1,9):
+        column = sheet.col_values(i,start_rowx=1,end_rowx=None)
+        maxload = max(column)
+        maxtime = xlrd.xldate_as_tuple(sheet.cell_value((column.index(maxload) + 1), 0), 0)
+        data.append([sheet.cell_value(0,i),maxtime[0],maxtime[1],maxtime[2],maxtime[3],maxload])
     return data
 
 def save_file(data, filename):
-    # YOUR CODE HERE
-
+    with open(filename, 'wb') as f:
+        writer = csv.writer(f, delimiter='|',)
+        writer.writerows(data)
     
 def test():
-    open_zip(datafile)
+    # open_zip(datafile)
     data = parse_file(datafile)
     save_file(data, outfile)
 

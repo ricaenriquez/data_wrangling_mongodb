@@ -46,13 +46,42 @@ def process_file(f):
     with open("{}/{}".format(datadir, f), "r") as html:
 
         soup = BeautifulSoup(html)
+        datas = soup.find_all("td",attrs={"style":"font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;"})
+        k = 0
+        h = 0
+        clean_data = []
+        for entry in datas:
+            if ('total' in entry.string.lower()):
+                # print "total found"
+                for l in range(h,k-1):
+                    clean_data.append(datas[l])
+                h = k + 4
+            k += 1
+        j = 0
+        for i in range(0,len(clean_data)/5):
+            # print clean_data[j+0].string
+            # print clean_data[j+1].string
+            # print clean_data[j+2].string
+            # print clean_data[j+3].string
+
+            year = int(clean_data[j+0].string)
+            month = int(clean_data[j+1].string)
+            domestic = int((clean_data[j+2].string).replace(',',''))
+            international = int((clean_data[j+3].string.replace(',','')))
+            data.append({"courier": info["courier"],
+                    "airport": info["airport"],
+                    "year": year,
+                    "month": month,
+                    "flights": {"domestic": domestic,
+                                "international": international}})
+            j += 5
 
     return data
 
 
 def test():
     print "Running a simple test..."
-    open_zip(datadir)
+    # open_zip(datadir)
     files = process_all(datadir)
     data = []
     for f in files:

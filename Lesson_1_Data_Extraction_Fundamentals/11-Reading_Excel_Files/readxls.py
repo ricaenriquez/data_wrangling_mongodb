@@ -11,7 +11,7 @@ Please see the test function for the expected return format
 
 import xlrd
 from zipfile import ZipFile
-datafile = "2013_ERCOT_Hourly_Load_Data.xls"
+datafile = "../../2013_ERCOT_Hourly_Load_Data.xls"
 
 
 def open_zip(datafile):
@@ -45,20 +45,33 @@ def parse_file(datafile):
     # print exceltime
     # print "Convert time to a Python datetime tuple, from the Excel float:",
     # print xlrd.xldate_as_tuple(exceltime, 0)
-    
-    
+
+    coast = sheet.col_values(1, start_rowx=1,end_rowx=None)
+    coast_max = 0.0
+    coast_min = 999999999.
+    maxi = 0
+    mini = 0
+    for i in range(0,len(coast)):
+        if coast[i] > coast_max:
+            coast_max = coast[i]
+            maxi = i + 1
+        if coast[i] < coast_min:
+            coast_min = coast[i]
+            mini = i + 1
+    coast_avg = sum(coast)*1./len(coast)*1.
+
     data = {
-            'maxtime': (0, 0, 0, 0, 0, 0),
-            'maxvalue': 0,
-            'mintime': (0, 0, 0, 0, 0, 0),
-            'minvalue': 0,
-            'avgcoast': 0
+            'maxtime': xlrd.xldate_as_tuple(sheet.cell_value(maxi, 0), 0),
+            'maxvalue': coast_max,
+            'mintime': xlrd.xldate_as_tuple(sheet.cell_value(mini, 0), 0),
+            'minvalue': coast_min,
+            'avgcoast': coast_avg
     }
     return data
 
 
 def test():
-    open_zip(datafile)
+    # open_zip(datafile)
     data = parse_file(datafile)
 
     assert data['maxtime'] == (2013, 8, 13, 17, 0, 0)
