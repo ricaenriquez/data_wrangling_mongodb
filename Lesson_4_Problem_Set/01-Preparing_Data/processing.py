@@ -51,6 +51,25 @@ FIELDS ={'rdf-schema#label': 'label',
          'kingdom_label': 'kingdom',
          'genus_label': 'genus'}
 
+def remove_duplicates(entry):
+    # This function trims out redundant description in parenthesis from like "(spider)"
+    startp = 0
+    endp = 0
+    new_entry = entry
+    if (startp != -1):
+        startp = entry.find('(', startp)
+        endp = entry.find(')', endp)
+        # Subtract 1 from startp to remove space and add 1 to endp to remove last ')'
+        new_entry = new_entry.replace(new_entry[startp-1:endp+1],'')
+    return new_entry
+
+def change_to_list(entry):
+    # If there is a value in 'synonym', it should be converted to a list
+    contents = entry.strip('{}').split('|')
+    # Remove leading/trailing * and spaces
+    for i in range(0,len(contents)):
+        contents[i] = contents[i].strip('* ')
+    return contents
 
 def process_file(filename, fields):
 
@@ -62,8 +81,29 @@ def process_file(filename, fields):
             l = reader.next()
 
         for line in reader:
-            # YOUR CODE HERE
-            pass
+            entry = {}
+            entry['classification'] = {}
+            for key in line.keys():
+                # Keys of the dictionary changed according to the mapping in FIELDS dictionary
+                if key in FIELDS:
+                    #strip leading and ending whitespace from all fields, if there is any
+                    info = line[key].strip()
+                    # If a value of a field is "NULL", convert it to None
+                    if (line[key] == 'NULL'):
+                        info = None
+                    if FIELDS[key] in ['family','class', 'phylum','order', 'kingdom', 'genus']:
+                        entry['classification'][FIELDS[key]] = info
+                    else:
+                        entry[FIELDS[key]] = info
+            # Remove info in ()
+            entry['label'] = remove_duplicates(entry['label'])
+            # If 'name' is "NULL" or contains non-alphanumeric characters, set it to the same value as 'label'.
+            if (entry['name'] == None) or (not entry['name'].isalnum()):
+                entry['name'] = entry['label']
+            # If there is a value in 'synonym', it should be converted to a list
+            if (entry['synonym'] != None):
+                entry['synonym'] = change_to_list(entry['synonym'])
+            data.append(entry)
     return data
 
 
@@ -79,21 +119,20 @@ def parse_array(v):
 
 def test():
     data = process_file(DATAFILE, FIELDS)
-
-    pprint.pprint(data[0])
+    # pprint.pprint(data[0])
     assert data[0] == {
-                        "synonym": None, 
-                        "name": "Argiope", 
+                        "synonym": None,
+                        "name": "Argiope",
                         "classification": {
-                            "kingdom": "Animal", 
-                            "family": "Orb-weaver spider", 
-                            "order": "Spider", 
-                            "phylum": "Arthropod", 
-                            "genus": None, 
+                            "kingdom": "Animal",
+                            "family": "Orb-weaver spider",
+                            "order": "Spider",
+                            "phylum": "Arthropod",
+                            "genus": None,
                             "class": "Arachnid"
-                        }, 
-                        "uri": "http://dbpedia.org/resource/Argiope_(spider)", 
-                        "label": "Argiope", 
+                        },
+                        "uri": "http://dbpedia.org/resource/Argiope_(spider)",
+                        "label": "Argiope",
                         "description": "The genus Argiope includes rather large and spectacular spiders that often have a strikingly coloured abdomen. These spiders are distributed throughout the world. Most countries in tropical or temperate climates host one or more species that are similar in appearance. The etymology of the name is from a Greek name meaning silver-faced."
                     }
 

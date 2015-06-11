@@ -47,6 +47,18 @@ FIELDS ={'rdf-schema#label': 'label',
          'binomialAuthority_label': 'binomialAuthority'}
 
 
+def remove_duplicates(entry):
+    # This function trims out redundant description in parenthesis from like "(spider)"
+    startp = 0
+    endp = 0
+    new_entry = entry
+    if (startp != -1):
+        startp = entry.find('(', startp)
+        endp = entry.find(')', endp)
+        # Subtract 1 from startp to remove space and add 1 to endp to remove last ')'
+        new_entry = new_entry.replace(new_entry[startp-1:endp+1],'')
+    return new_entry
+
 def add_field(filename, fields):
 
     process_fields = fields.keys()
@@ -55,14 +67,20 @@ def add_field(filename, fields):
         reader = csv.DictReader(f)
         for i in range(3):
             l = reader.next()
-        # YOUR CODE HERE
-
+        # Process the csv file and extract 2 fields - 'rdf-schema#label' and 'binomialAuthority_label'
+        for line in reader:
+            if line['binomialAuthority_label'] != 'NULL':
+                info = remove_duplicates(line['rdf-schema#label'])
+                data[info] = line['binomialAuthority_label'].strip()
     return data
 
 
 def update_db(data, db):
-    # YOUR CODE HERE
-    pass
+    for key in data.keys():
+        spider = db.arachnid.find_one({"label": key})
+        spider['classification']['binomialAuthority'] = data[key]
+        db.arachnid.save(spider)
+
 
 
 def test():
@@ -72,15 +90,16 @@ def test():
     # and as an example for running this code locally!
     
     data = add_field(DATAFILE, FIELDS)
+    print data
     from pymongo import MongoClient
     client = MongoClient("mongodb://localhost:27017")
     db = client.examples
 
     update_db(data, db)
 
-    updated = db.arachnid.find_one({'label': 'Opisthoncana'})
-    assert updated['classification']['binomialAuthority'] == 'Embrik Strand'
-    pprint.pprint(data)
+    # updated = db.arachnid.find_one({'label': 'Opisthoncana'})
+    # assert updated['classification']['binomialAuthority'] == 'Embrik Strand'
+    # pprint.pprint(data)
 
 
 
