@@ -32,7 +32,12 @@ def get_db(db_name):
 
 def make_pipeline():
     # complete the aggregation pipeline
-    pipeline = [ ]
+    pipeline = [{'$unwind': '$isPartOf'},
+                {'$group': {'_id': {'Country': '$country',
+                                    'Region': '$isPartOf'},
+                            'avgCityPopulation': {'$avg': '$population'}}},
+                {'$group': {'_id': '$_id.Country',
+                            'avgRegionalPopulation': {'$avg': '$avgCityPopulation'}}}]
     return pipeline
 
 def aggregate(db, pipeline):
