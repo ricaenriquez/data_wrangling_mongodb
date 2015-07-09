@@ -95,8 +95,7 @@ POSITION = ["lat", "lon"]
 
 def shape_element(element):
     node = {}
-    node['created'] = {}
-    pos = 0
+    created = 0
     refs = 0
     address = 0
     if element.tag == "node" or element.tag == "way":
@@ -105,10 +104,13 @@ def shape_element(element):
         for entry in attributes:
     # attributes in the CREATED array should be added under a key "created"
             if entry in CREATED:
+                if created == 0:
+                    node['created'] = {}
+                    created = 1
                 node['created'][entry] = attributes[entry]
     # attributes for latitude and longitude should be added to a "pos" array,
-    #   for use in geospacial indexing. Make sure the values inside "pos" array are floats
-    #   and not strings.
+    # for use in geospacial indexing. Make sure the values inside "pos" array are floats
+    # and not strings.
             elif entry in POSITION:
                 node['pos'] = [float(attributes['lat']), float(attributes['lon'])]
             else:
