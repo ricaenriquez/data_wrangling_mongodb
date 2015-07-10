@@ -45,10 +45,28 @@ CREATED = ["version", "changeset", "timestamp", "user", "uid"]
 # Sublabels that go in the position label
 POSITION = ["lat", "lon"]
 
-# Upper labels that are kept (from "nanoproject_2_query.py")
-kept = ['maxspeed', 'access', 'address', 'amenity', 'entrance', 'natural', 'foot', 'name', 'ref', 'highway', 'barrier',
-        'service', 'landuse', 'source', 'operator', 'building']
+# Labels/sublabels that are kept
+kept = {"address": ["street",
+                 "postcode",
+                 "housenumber",
+                 "housename",
+                 "city",
+                 "country",
+                 "interpolation"],
+     "amenity": None,
+     "barrier": None,
+     "entrance": None,
+     "foot": None,
+     "highway": None,
+     "landuse": None,
+     "natural": None,
+     "operator": None,
+     "source": ["name"],
+     "created": CREATED,
+     "position": POSITION}
 
+# Label structure for double-checking
+labels = {}
 
 def update_name(name, mapping):
     street = name.split(" ")
@@ -58,14 +76,74 @@ def update_name(name, mapping):
     name = " ".join(street)
     return name
 
+def update_entry(entry, mapping):
+    if entry in mapping:
+        return mapping[entry]
+    return entry
 
 # Update the capitalization of these streets
-mapping = {"chieftain": "Chieftain",
-           "sweetpea": "Sweetpea"}
-# Dictionary of labels
-labels = {}
+mapping_street = {"chieftain": "Chieftain",
+                  "sweetpea": "Sweetpea"}
 
+# Update these cities
+mapping_city = {"cambridge": "Cambridge",
+                "South Cambridgeshire": "Cambridge",
+                "Girton": "Cambridge",
+                "11": "Cambridge"}
+# Update barrier entries
+mapping_barrier = {"fence;wall": "fence",
+                   "fedr": None,
+                   "bollards": "bollard"}
 
+# Update entrance
+mapping_entrance = {"secondary_entrance":"secondary",
+                    "main_entrance; porters": "main_entrance;porters",
+                    "porters;main_entrance": "main_entrance;porters",
+                    "main": "main_entrance",
+                    "emegency": "emergency",
+                    "main_entrance;porters;": "main_entrance;porters"}
+# Update highway
+mapping_highway = {"bus_stand": "bus_stop"}
+
+# Update landuse
+mapping_landuse = {"institututional": "institutional"}
+
+# Update operator
+mapping_operator = {"YourSpace": "Your Space Apartments",
+                    "Your Space": "Your Space Apartments",
+                    "Trinity College": "Trinity College (University of Cambridge)",
+                    "St John's College": "St John's College (University of Cambridge)",
+                    "Lucy Cavendish College": "Lucy Cavendish College (University of Cambridge)",
+                    "Lloyds": "Lloyds TSB",
+                    "King's College": "King's College (University of Cambridge)",
+                    "King's College (University Of Cambridge)": "King's College (University of Cambridge)",
+                    "Needham Institute": "Needham Research Institute",
+                    "Gonville and Caius College (University of Cambridge)": "Gonville & Caius College (University of Cambridge)",
+                    "EDF": "EDF Energy",
+                    "Clare College": "Clare College (University of Cambridge)",
+                    "Christ's College": "Christ's College (University of Cambridge)"}
+
+"""
+After looking at the dataset, only the following labels will be kept:
+    {"address": ["street",
+                 "postcode",
+                 "housenumber",
+                 "housename",
+                 "city",
+                 "country",
+                 "interpolation"],
+     "amenity": None,
+     "barrier": None,
+     "entrance": None,
+     "foot": None,
+     "highway": None,
+     "landuse": None,
+     "natural": None,
+     "operator": None,
+     "source": ["name"],
+     "created": ["version", "changeset", "timestamp", "user", "uid"],
+     "position": ["lat", "lon"]}
+"""
 def shape_element(element):
     node = {}
     # Only add "nodes" and "ways"
@@ -73,8 +151,9 @@ def shape_element(element):
         attributes = element.attrib
         # Tag this node with "node" or "way"
         node["type"] = element.tag
+        # Upper labels are set
         for entry in attributes:
-            # attributes in the CREATED array should be added under a key "created"
+            # Attributes in the CREATED array should be added under a key "created"
             if entry in CREATED:
                 try:
                     node["created"][entry] = attributes[entry]
@@ -86,18 +165,16 @@ def shape_element(element):
             # The values inside "pos" arrays are floats and not strings.
             elif entry in POSITION:
                 node["pos"] = [float(attributes["lat"]), float(attributes["lon"])]
-            else:
+            elif entry in kept:
                 node[entry] = attributes[entry]
+                labels[entry]= None
         # Using second level tags
         for child in element:
             child_attributes = child.attrib
             for centry in child_attributes:
+                # Ignore ref label
                 if centry == "ref":
-                    try:
-                        node["node_refs"].append(child_attributes[centry])
-                    except:
-                        # Create a new list for "node_refs"
-                        node["node_refs"] = [child_attributes[centry]]
+                    pass
                 elif centry == "k":
                     clabel = child_attributes[centry]
                     # If second level tag "k" value contains problematic characters, it is ignored
@@ -113,24 +190,44 @@ def shape_element(element):
                         # Change "addr" to "address"
                         if clabel == "addr":
                             clabel = "address"
-                        try:
-                            if ccentry not in labels[clabel]:
-                                labels[clabel].append(ccentry)
-                        except:
-                            labels[clabel] = [ccentry]
-                        try:
-                            node[clabel][ccentry] = child_attributes["v"]
-                        except:
-                            # Create a new dictionary for node[clabel]
-                            node[clabel] = {}
-                            node[clabel][ccentry] = child_attributes["v"]
-                        if ccentry == "street":
+                        # Only keep labels and sublabels in the "kept dictionary"
+                        if (clabel in kept) and (ccentry in kept[clabel]):
+                            try:
+                                node[clabel][ccentry] = child_attributes["v"]
+                            except:
+                                # Create a new dictionary for node[clabel]
+                                node[clabel] = {}
+                                node[clabel][ccentry] = child_attributes["v"]
+                            try:
+                                if ccentry not in labels[clabel]:
+                                    labels[clabel].append(ccentry)
+                            except:
+                                labels[clabel] = [ccentry]
+                            if ccentry == "street":
                             # Update street names, if needed
-                            node["address"]["street"] = update_name(child_attributes["v"], mapping)
+                                node["address"]["street"] = update_name(child_attributes["v"], mapping_street)
+                            # If invalid postcode return None
+                            elif ccentry == "postcode":
+                                if (child_attributes["v"] == "CB1") or (child_attributes["v"] == "SG8 5TF"):
+                                    return None
+                            elif ccentry == "city":
+                                # Update city to the one in the dictionary
+                                node["address"]["street"] = update_entry(child_attributes["v"], mapping_city)
                     else:
                         # For upper labels
-                        node[clabel] = child_attributes["v"]
-                        if clabel not in labels:
+                        if clabel in kept:
+                            if clabel == "barrier":
+                                node[clabel] = update_entry(child_attributes["v"], mapping_barrier)
+                            elif clabel == "entrance":
+                                node[clabel] = update_entry(child_attributes["v"], mapping_entrance)
+                            elif clabel == "highway":
+                                node[clabel] = update_entry(child_attributes["v"], mapping_highway)
+                            elif clabel == "landuse":
+                                node[clabel] = update_entry(child_attributes["v"], mapping_landuse)
+                            elif clabel == "operator":
+                                node[clabel] = update_entry(child_attributes["v"], mapping_operator)
+                            else:
+                                node[clabel] = child_attributes["v"]
                             labels[clabel] = None
         return node
     else:
@@ -144,27 +241,16 @@ def process_map(file_in, pretty=False):
             el = shape_element(element)
             if el:
                 data.append(el)
-                # if pretty:
-                #     fo.write(json.dumps(el, indent=2) + "\n")
-                # else:
-                #     fo.write(json.dumps(el) + "\n")
+                if pretty:
+                    fo.write(json.dumps(el, indent=2) + "\n")
+                else:
+                    fo.write(json.dumps(el) + "\n")
     return data
 
 
 def test():
     cam_data = process_map("cambridge_england.osm", True)
-    print "The initial dictionary is"
-    pprint.pprint(labels)
-
-    print "The initial upper labels are:"
-    pprint.pprint(labels.keys())
-
-    kept_sub = {}
-    for key in kept:
-        kept_sub[key] = labels[key]
-
-    print "The intermediate dictionary with sublabels is"
-    pprint.pprint(kept_sub)
+    # pprint.pprint(labels)
 
 if __name__ == "__main__":
     test()
